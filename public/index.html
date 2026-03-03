@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Loading Verified Page...</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <style>
+    .hidden-field { display: none; }
+    #redirectLink { display: none; margin-top: 20px; }
+  </style>
+</head>
+<body>
+<h2>Human Verification Required</h2>
+
+<!-- Honeypot hidden field -->
+<form id="verifyForm">
+  <input type="text" name="honeypot" class="hidden-field" />
+
+  <!-- Honeypot Trigger Message (For Developers) -->
+  <p id="honeypotMessage" style="color: red; display: none;">Bot detected! Honeypot field was filled.</p>
+
+  <!-- Cloudflare Turnstile CAPTCHA -->
+  <div class="cf-turnstile" data-sitekey="0x4AAAAAACl039iI0uRQMl6f"></div>
+
+  <br>
+  <button type="submit">Verify</button>
+</form>
+
+<div id="redirectLink">
+  <p>✅ Verification successful.</p>
+  <a id="finalLink" href="#">Click here to continue</a>
+</div>
+
+<script>
+document.getElementById("verifyForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  // Honeypot check (detect bots)
+  if(document.querySelector("input[name='honeypot']").value !== "") {
+    document.getElementById("honeypotMessage").style.display = "block"; // Show bot message
+    return; // Prevent form submission
+  }
+
+  const token = document.querySelector("[name='cf-turnstile-response']").value;
+
+  const response = await fetch("/api/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token })
+  });
+
+  const result = await response.json();
+
+  if(result.success) {
+    document.getElementById("redirectLink").style.display = "block";
+    document.getElementById("finalLink").href = result.redirectUrl;
+  } else {
+    alert("Verification failed.");
+  }
+});
+</script>
+
+</body>
+</html>
